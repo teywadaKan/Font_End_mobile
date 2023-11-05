@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shushiman/model/sushi_model.dart';
+import 'package:shushiman/model/user_model.dart';
 import 'package:shushiman/page/cart_screen.dart';
 import 'package:shushiman/service/sushi_api.dart';
 import 'package:shushiman/widgets/add_to_cart_dialog.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final List<UserModel> user;
+  const MainScreen({super.key, required this.user});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -31,6 +33,7 @@ class _MainScreenState extends State<MainScreen> {
 
   // ignore: non_constant_identifier_names
   Widget SushiTile(screenSize) {
+    final List<UserModel> userData = widget.user;
     return FutureBuilder<List<SushiModel>>(
       future: sushies,
       builder: (context, snapshot) {
@@ -44,7 +47,7 @@ class _MainScreenState extends State<MainScreen> {
           } else if (snapshot.hasData) {
             List<SushiModel> sushi = snapshot.data!;
             return SizedBox(
-              height: (screenSize.height) - 90,
+              height: (screenSize.height) - 130,
               child: ListView.builder(
                 physics: const BouncingScrollPhysics(),
                 itemCount: sushi.length,
@@ -56,7 +59,8 @@ class _MainScreenState extends State<MainScreen> {
                           showDialog(
                             context: context,
                             builder: (context) {
-                              return AddToCartDialog(sushi: sushi[index]);
+                              return AddToCartDialog(
+                                  sushi: sushi[index], uid: userData[0].id);
                             },
                           );
                         },
@@ -122,11 +126,12 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final List<UserModel> userData = widget.user;
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
       appBar: AppBar(
-        leading: Icon(Icons.menu, color: Colors.grey[100]),
+        leading: const Icon(Icons.menu, color: Colors.transparent),
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
@@ -138,12 +143,19 @@ class _MainScreenState extends State<MainScreen> {
       backgroundColor: const Color.fromARGB(255, 156, 172, 158),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: SushiTile(screenSize),
+        child: Column(
+          children: [
+            Text(
+              "Welcome ${userData[0].name}",
+              style: GoogleFonts.redHatDisplay(fontSize: 18),
+            ),
+            SushiTile(screenSize),
+          ],
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color.fromARGB(255, 114, 154, 120),
-        tooltip: 'Increment',
         onPressed: () {
           Get.to(const CartScreen());
         },

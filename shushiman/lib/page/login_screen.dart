@@ -1,7 +1,14 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shushiman/model/user_login_model.dart';
+import 'package:shushiman/model/user_model.dart';
 import 'package:shushiman/page/main_screen.dart';
+import 'package:shushiman/service/user_api.dart';
+import 'package:http/http.dart' as http;
 import 'package:shushiman/widgets/Button_widget.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,6 +19,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final username = TextEditingController();
+  final password = TextEditingController();
+  List<UserModel> uLog = [];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,6 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 270,
               ),
               TextFormField(
+                controller: username,
                 decoration: InputDecoration(
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(25.0),
@@ -67,6 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 10,
               ),
               TextFormField(
+                controller: password,
                 decoration: InputDecoration(
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(25.0),
@@ -101,8 +113,42 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               ButtonWidget(
                 text: "Login",
-                onTap: () {
-                  Get.to(const MainScreen());
+                onTap: () async {
+                  var data = {
+                    "username": username.text,
+                    "password": password.text
+                  };
+                  UserLoginModel userLog = UserLoginModel.fromJson(data);
+                  fetchDataUser(userLog);
+                  if (uLog.isNotEmpty) {
+                    Get.to(MainScreen(
+                      user: uLog,
+                    ));
+                  } else {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          actions: [
+                            TextButton(
+                              child: const Text('กลับ'),
+                              onPressed: () {
+                                Get.back();
+                              },
+                            ),
+                          ],
+                          title: Text('Error'),
+                          content: SingleChildScrollView(
+                            child: ListBody(
+                              children: <Widget>[
+                                Text("ไม่มี username นี้หรือ password ผิด")
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }
                 },
               ),
             ],
@@ -110,5 +156,17 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> fetchDataUser(UserLoginModel userLog) async {
+    String url = "http://192.168.1.2:5000/user/login";
+    final response = await http.post(
+      Uri.parse(url),
+      body: jsonEncode(userLog),
+      headers: {"Content-Type": "application/json"},
+    );
+    print(response.body);
+    List<UserModel> user = userModelFromJson(response.body);
+    this.uLog = user;
   }
 }
